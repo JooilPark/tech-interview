@@ -1,21 +1,42 @@
 # 4. Database
 **:book: Contents**
-* [데이터베이스 풀](#데이터베이스-풀)
-* [정규화(1차 2차 3차 BCNF)](#정규화-1차-2차-3차-bcnf)
-* [트랜잭션(Transaction) 이란](#트랜잭션이란)
-* [트랜잭션 격리 수준(Transaction Isolation Level)](#트랜잭션-격리-수준)
-* [Join](#join)
-* [SQL injection](#sql-injection)
-* [Index란](#index란)
-* [Statement와 PrepareStatement](#statement와-preparestatement)
-* [RDBMS와 NoSQL](#rdbms와-nosql)
-* [효과적인 쿼리 저장](#효과적인-쿼리-저장)
-* [옵티마이저(Optimizer)란](#옵티마이저란)
-* [Replication](#replication)
-* [파티셔닝(Partitioning)](#파티셔닝)
-* [샤딩(Sharding)](#샤딩)
-* [객체 관계 매핑(Object-relational mapping, ORM)이란](#orm이란)
-* [JDBC](#jdbc)
+- [4. Database](#4-database)
+    - [데이터베이스 풀](#데이터베이스-풀)
+    - [정규화 1차 2차 3차 BCNF](#정규화-1차-2차-3차-bcnf)
+    - [트랜잭션이란](#트랜잭션이란)
+    - [트랜잭션 격리 수준](#트랜잭션-격리-수준)
+    - [Join](#join)
+    - [SQL Injection](#sql-injection)
+    - [Index란](#index란)
+      - [사용 이유](#사용-이유)
+      - [동작](#동작)
+      - [B+tree 알고리즘](#btree-알고리즘)
+      - [주의할 점](#주의할-점)
+    - [Statement와 PrepareStatement](#statement와-preparestatement)
+    - [RDBMS와 NoSQL](#rdbms와-nosql)
+    - [효과적인 쿼리 저장](#효과적인-쿼리-저장)
+    - [옵티마이저란](#옵티마이저란)
+    - [Replication](#replication)
+    - [파티셔닝](#파티셔닝)
+    - [샤딩](#샤딩)
+    - [ORM이란](#orm이란)
+      - [영속성(Persistence)](#영속성persistence)
+      - [Persistence layer](#persistence-layer)
+      - [Persistence framework](#persistence-framework)
+      - [예시 (JDBC vs JPA)](#예시-jdbc-vs-jpa)
+      - [장점 - 왜 사용하는가?](#장점---왜-사용하는가)
+      - [단점](#단점)
+    - [JDBC](#jdbc)
+      - [JDBC란?](#jdbc란)
+      - [JDBC를 이용한 DB접근](#jdbc를-이용한-db접근)
+      - [1. **JDBC driver 로딩**](#1-jdbc-driver-로딩)
+      - [2. **Connection 맺기**](#2-connection-맺기)
+      - [3. **SQL 실행**](#3-sql-실행)
+      - [(참고) JDBC의 DB접근 플로우](#참고-jdbc의-db접근-플로우)
+      - [(참고) JDBC 컴포넌트의 상호작용](#참고-jdbc-컴포넌트의-상호작용)
+      - [Plain JDBC API의 문제점](#plain-jdbc-api의-문제점)
+      - [JDBC Template](#jdbc-template)
+  - [:house: Home](#house-home)
 
 ---
 
@@ -27,7 +48,7 @@
 - **DB에 접근하는 단계**
     1. 웹 컨테이너가 실행되면서 DB와 연결된 Connection 객체들을 미리 생성하여 pool에 저장한다.
     2. DB에 요청 시, pool에서 Connection 객체를 가져와 DB에 접근한다.
-    3. 처리가 끝나면 다시 pool에 반환한다.
+    3. 처리가 끝나면 다시 pool에 반환한다.  
 ![](./images/db-img/db-connection-01.jpeg)
 - **Connction이 부족하면?**
     - 모든 요청이 DB에 접근하고 있고 남은 Conncetion이 없다면, 해당 클라이언트는 대기 상태로 전환시키고 Pool에 Connection이 반환되면 대기 상태에 있는 클라이언트에게 순차적으로 제공된다.
@@ -257,8 +278,55 @@
 > - []()
 
 ### Index란
+인덱스(index)의 원래 뜻은 색인. 데이터베이스에서 조회 및 검색을 더 빠르게 할 수 있는 방법/기술, 혹은 이에 쓰이는 자료구조 자체를 의미하기도 한다.
+
+#### 사용 이유
+`select`문을 사용하여 원하는 조건의 데이터를 검색할 때, 저장된 데이터의 양이 엄청나게 많다면 검색을 위한 순회에 많은 자원과 시간이 소모될 것이다. 이때 도움이 되는게 인덱스이다. 
+
+자주 조회되는 Column 에 대한 Index Table을 따로 만들어 SELECT 문이 들어왔을 때 Index 테이블에 있는 값들로 결과 값을 조회해 온다. 그래서 Index를 잘 사용한다면 "검색" 연산을 실행했을 때 성능을 올릴 수 있게 된다.
+
+![](./images/db-index.png)
+
+
+#### 동작
+
+- Index Table에서 `where`에 포함된 값을 검색
+- 해당 값의 table_id PK를 획득
+- 가져온 table_id PK값으로 원본 테이블에서 값을 조회
+
+DBMS는 인덱스를 다양한 알고리즘으로 관리를 하고 있는데 일반적으로 사용되는 알고리즘은 B+ Tree 알고리즘이다.
+
+#### B+tree 알고리즘
+
+![](./images/db-btree.png)
+
+- 실제 데이터가 저장된 리프노드(Leaf nodes)
+- 리프노드까지의 경로 역할을 하는 논리프노드(Non-leaf nodes)
+- 경로의 출발점이 되는 루트 노드(Root node)
+
+B+tree는 리프노드에 이르기까지에 대한 자식 노드에 포인터가 저장되어 있다. 즉, B+트리의 검색은 루트노드에서 어떤 리프 노드에 이르는 한 개의 경로만 검색하면 되므로 매우 효율적이다. 
+
+##### B+tree 사용 이유
+- **왜 index 생성 시 b-tree를 사용하는지? hash table이 더 효율적이지 않은지?**
+    - SELECT 질의 조건에는 부등호 연산(<>)도 포함
+    - hash table은 동등 연산에 특화된 자료구조이기 때문에 부등호 연산 사용 시 문제 발생
+
+#### 주의할 점
+
+- 인덱스는 따로 테이블의 형태로 관리가 된다. 자원을 소모한다는 의미. 때문에 무분별한 인덱스의 사용은 성능에 부정적인 영향을 미칠 수 있다.
+
+- 또한 인덱스는 이진트리를 사용하기 때문에 기본적으로 정렬되어 있다. 이로인해 검색과 조회의 속도를 향상시킬 수 있지만 잦은 데이터의 변경(삽입, 수정 삭제)가 된다면 인덱스 데이블을 변경과 정렬에 드는 오버헤드 때문에 오히려 성능 저하가 일어날 수 있다.
+  - INSERT : 테이블에는 입력 순서대로 저장되지만, 인덱스 테이블에는 정렬하여 저장하기 때문에 성능 저하 발생
+  - DELETE : 테이블에서만 삭제되고 인덱스 테이블에는 남아있어 쿼리 수행 속도 저하
+  - UPDATE : 인덱스에는 UPDATE가 없기 때문에 DELETE, INSERT 두 작업 수행하여 부하 발생
+  
+- 데이터의 중복이 높은 컬럼(카디널리티가 낮은 컬럼)은 인덱스로 만들어도 무용지물 (예: 성별)
+- 다중 컬럼 인덱싱할 때 카디널리티가 높은 컬럼->낮은 컬럼 순으로 인덱싱해야 효율적
+
 > :arrow_double_up:[Top](#4-database)    :leftwards_arrow_with_hook:[Back](https://github.com/WeareSoft/tech-interview#4-database)    :information_source:[Home](https://github.com/WeareSoft/tech-interview#tech-interview)
-> - []()
+> - [victolee - [DB이론] 인덱스(Index)](https://victorydntmd.tistory.com/319)
+> - [Nathan - DB 성능을 위한 Index](https://brunch.co.kr/@skeks463/25)
+> - [인덱스 기본 원리](http://wiki.gurubee.net/pages/viewpage.action?pageId=26745270)
 
 ### Statement와 PrepareStatement
 > :arrow_double_up:[Top](#4-database)    :leftwards_arrow_with_hook:[Back](https://github.com/WeareSoft/tech-interview#4-database)    :information_source:[Home](https://github.com/WeareSoft/tech-interview#tech-interview)

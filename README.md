@@ -58,6 +58,7 @@
   * Q. 초기 Sequence Number인 ISN을 0부터 시작하지 않고 난수를 생성해서 설정하는 이유?
 * HTTP와 HTTPS
 * HTTP 요청/응답 헤더
+* HTTP와 HTTPS 동작 과정
 * CORS란
 * GET 메서드와 POST 메서드
 * 쿠키(Cookie)와 세션(Session)
@@ -121,6 +122,7 @@
 * DFS와 BFS의 차이
 * Fibonacci에서의 세 가지(Recursion, Dynamic Programming, 반복) 방식에 대한 시간복잡도와 공간복잡도 차이
 * 정렬 알고리즘의 종류와 개념
+* Greedy 알고리즘
 * 최소 신장 트리(MST, Minimum Spanning Tree)란
 * Kruskal MST 알고리즘
 * Prim MST 알고리즘
@@ -160,6 +162,8 @@
 * 동기화와 비동기화의 차이(Syncronous vs Asyncronous)
 * java에서 '=='와 'equals()'의 차이
 * java의 리플렉션(Reflection) 이란
+* Stream이란?
+* Lambda란?
 
 ## 8. JavaScript
 :arrow_forward: [답변 내용](/contents/javascript.md)
@@ -180,6 +184,7 @@
 :arrow_forward: [답변 내용](/contents/spring.md)
 * 스프링 프레임워크란
 * Spring, Spring MVC, Spring Boot의 차이
+* Bean이란
 * Container란
 * IOC(Inversion of Control, 제어의 역전)란
 * MVC 패턴이란
@@ -188,6 +193,7 @@
 * POJO
 * DAO와 DTO의 차이
 * Spring JDBC를 이용한 데이터 접근
+* Filter와 Interceptor 차이
 
 ## 10. Security 
 :arrow_forward: [답변 내용](/contents/security.md)
@@ -195,7 +201,8 @@
 * 패스워드 암호화 방법 
 * SQL Injection 공격 
 * CSRF 공격 
-* XSS 공격 
+* XSS 공격
+* OAuth
 
 ## 11. ETC
 :arrow_forward: [답변 내용](/contents/etc.md)
@@ -211,8 +218,12 @@
 * 웹 서버(Web Server)와 웹 어플리케이션 서버(WAS)의 차이
 * 애자일 방법론이란
 * Servlet과 JSP
-* Memcached와 Redis의 차이
-* Maven과 Gradle의 차이 
+* Redis와 Memcached의 차이
+* Maven과 Gradle의 차이
+* Blocking과 Non-Blocking
+* 함수형 프로그래밍이란
+* 이벤트 기반 프로그래밍이란
+* Mock이란
 
 ---
 

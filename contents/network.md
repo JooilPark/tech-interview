@@ -1,23 +1,29 @@
 # 2. Network
 **:book: Contents**
-* [OSI 7계층](#osi-7계층)
-* [TCP/IP의 개념](#tcp-ip의-개념)
-* [TCP와 UDP](#tcp와-udp)
-* [TCP와 UDP의 헤더 분석](#tcp와-udp의-헤더-분석)
-* [TCP의 3-way-handshake와 4-way-handshake](#tcp의-3-way-handshake와-4-way-handshake)
-  * Q. TCP의 연결 설정 과정(3단계)과 연결 종료 과정(4단계)이 단계가 차이나는 이유?
-  * Q. 만약 Server에서 FIN 플래그를 전송하기 전에 전송한 패킷이 Routing 지연이나 패킷 유실로 인한 재전송 등으로 인해 FIN 패킷보다 늦게 도착하는 상황이 발생하면 어떻게 될까?
-  * Q. 초기 Sequence Number인 ISN을 0부터 시작하지 않고 난수를 생성해서 설정하는 이유?
-* [HTTP와 HTTPS](#http와-https)
-* [HTTP 요청/응답 헤더](#http-요청-응답-헤더)
-* [CORS란](#cors란)
-* [GET 메서드와 POST 메서드](#get-메서드와-post-메서드)
-* [쿠키(Cookie)와 세션(Session)](#쿠키와-세션)
-* [DNS](#dns)
-* [REST와 RESTful의 개념](#rest와-restful의-개념)
-* [소켓(Socket)이란](#소켓이란)
-* [Socket.io와 WebSocket의 차이](#socket.io와-websocket의-차이)
-* [Frame, Packet, Segment, Datagram](#frame-packet-segment-datagram)
+- [2. Network](#2-network)
+    - [OSI 7계층](#osi-7계층)
+    - [TCP IP의 개념](#tcp-ip의-개념)
+    - [TCP와 UDP](#tcp와-udp)
+    - [TCP와 UDP의 헤더 분석](#tcp와-udp의-헤더-분석)
+    - [TCP의 3 way handshake와 4 way handshake](#tcp의-3-way-handshake와-4-way-handshake)
+      - [:question:TCP 관련 질문 1](#questiontcp-관련-질문-1)
+      - [:question:TCP 관련 질문 2](#questiontcp-관련-질문-2)
+      - [:question:TCP 관련 질문 3](#questiontcp-관련-질문-3)
+    - [HTTP와 HTTPS](#http와-https)
+    - [HTTP 요청 응답 헤더](#http-요청-응답-헤더)
+    - [HTTP와 HTTPS 동작 과정](#http와-https-동작-과정)
+    - [CORS란](#cors란)
+    - [GET 메서드와 POST 메서드](#get-메서드와-post-메서드)
+    - [쿠키와 세션](#쿠키와-세션)
+    - [DNS](#dns)
+    - [REST와 RESTful의 개념](#rest와-restful의-개념)
+    - [소켓이란](#소켓이란)
+    - [Socket.io와 WebSocket의 차이](#socketio와-websocket의-차이)
+    - [Frame Packet Segment Datagram](#frame-packet-segment-datagram)
+      - [PDU (Protocol Data Unit)](#pdu-protocol-data-unit)
+      - [데이터 캡슐화](#데이터-캡슐화)
+  - [Reference](#reference)
+  - [:house: Home](#house-home)
 
 
 ---
@@ -118,7 +124,48 @@
 
 ### TCP와 UDP의 헤더 분석
 
+#### TCP Header
+* TCP는 상위계층으로부터 데이터를 받아 **헤더**를 추가해 IP로 전송
+
+![tcpheader](./images/tcpheader.png)
+
+|필드|내용|크기(bits)|
+|----|----|----|
+|Source Port, Destination Port|TCP로 연결되는 가상 회선 양단의 송수신 프로세스에 할당되는 포트 주소|16|
+|Sequence Number|송신자가 지정하는 순서 번호, **전송되는 바이트 수** 기준으로 증가<br/>SYN = 1 : 초기 시퀀스 번호. ACK 번호는 이 값에 + 1|32|
+|Acknowledgment(ACK) Number|수신 프로세스가 제대로 **수신한 바이트의 수** 응답 용|32|
+|Header Length(Data Offset)|TCP 헤더 길이를 4바이트 단위로 표시(최소 20, 최대 60 바이트)|4|
+|Resv(Reserved)|나중을 위해 0으로 채워진 예약 필드|6|
+|Flag Bit|SYN, ACK, FIN 등 제어 번호(아래 표 참고)|6|
+|Window Size|**수신 윈도우의 버퍼 크기** 지정(0이면 송신 중지). 상대방의 확인 없이 전송 가능한 최대 바이트 수|16|
+|TCP Checksum|헤더와 데이터의 에러 확인 용도|16|
+|Urgent Pointer(긴급 위치)|현재 순서 번호부터 표시된 바이트까지 긴급한 데이터임을 표시, URG 플래그 비트가 지정된 경우에만 유효|16|
+|Options|추가 옵션 있을 경우 표시|0~40|
+
+  * Flag Bit
+
+    |종류|내용|
+    |----|----|
+    |URG|긴급 위치 필드 유효 여부 설정|
+    |ACK|응답 유효 여부 설정. 최초의 SYN 패킷 이후 모든 패킷은 ACK 플래그 설정 필요. 데이터를 잘 받았으면 긍정 응답으로 ACK(=SYN+1) 전송|
+    |PSH|수신측에 버퍼링된 데이터를 상위 계층에 즉시 전달할 때|
+    |RST|연결 리셋 응답 혹은 유효하지 않은 세그먼트 응답|
+    |SYN|연결 설정 요청. 양쪽이 보낸 최초 패킷에만 SYN 플래그 설정|
+    |FIN|연결 종료 의사 표시|
+
+#### UDP Header
+![udpheader](./images/udpheader.png)
+
+|필드|내용|크기(bits)|
+|----|----|----|
+|Source Port, Destination Port|송수신 애플리케이션의 포트 번호|16|
+|Length|헤더와 데이터 포함 전체 길이|16|
+|Checksum|헤더와 데이터의 에러 확인 용도. UDP는 에러 복구를 위한 필드가 불필요하기 때문에 TCP 헤더에 비해 간단|16|
+
 > :arrow_double_up:[Top](#2-network)    :leftwards_arrow_with_hook:[Back](https://github.com/Do-Hee/tech-interview#2-network)    :information_source:[Home](https://github.com/Do-Hee/tech-interview#tech-interview)
+> - [TCP 와 UDP 차이를 자세히 알아보자](https://velog.io/@hidaehyunlee/TCP-%EC%99%80-UDP-%EC%9D%98-%EC%B0%A8%EC%9D%B4)
+> - [TCP, UDP header](https://cysecguide.blogspot.com/2018/04/tcp-udp-header.html)
+> - [TCP 와 UDP [동작원리/헤더/차이점]](https://m.blog.naver.com/PostView.nhn?blogId=minki0127&logNo=220804490550&proxyReferer=https:%2F%2Fwww.google.com%2F)
 > - [https://idchowto.com/?p=18352](https://idchowto.com/?p=18352)
 > - [https://m.blog.naver.com/PostView.nhn?blogId=koromoon&logNo=120162515270&proxyReferer=https%3A%2F%2Fwww.google.co.kr%2F](https://m.blog.naver.com/PostView.nhn?blogId=koromoon&logNo=120162515270&proxyReferer=https%3A%2F%2Fwww.google.co.kr%2F)
 
@@ -347,6 +394,77 @@
 > - [http://www.ktword.co.kr/abbr_view.php?nav=&m_temp1=5905&id=902](http://www.ktword.co.kr/abbr_view.php?nav=&m_temp1=5905&id=902)
 > - [https://gmlwjd9405.github.io/2019/01/28/http-header-types.html](https://gmlwjd9405.github.io/2019/01/28/http-header-types.html)
 > - [https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers)
+
+### HTTP와 HTTPS 동작 과정
+#### HTTP 동작 과정
+* 서버 접속 -> 클라이언트 -> 요청 -> 서버 -> 응답 -> 클라이언트 -> 연결 종료
+1. **사용자가 웹 브라우저에 URL 주소 입력**
+2. **DNS 서버에 웹 서버의 호스트 이름을 IP 주소로 변경 요청**
+3. **웹 서버와 TCP 연결 시도**
+    * 3way-handshaking
+4. **클라이언트가 서버에게 요청**
+    * HTTP Request Message = Request Header + 빈 줄 + Request Body
+    * Request Header
+      * 요청 메소드 + 요청 URI + HTTP 프로토콜 버전
+        * ```GET /background.png HTTP/1.0``` ```POST / HTTP 1.1```
+        * Header 정보(key-value 구조)
+    * 빈 줄
+      * 요청에 대한 모든 메타 정보가 전송되었음을 알리는 용도
+    * Request Body
+      * GET, HEAD, DELETE, OPTIONS처럼 리소스를 가져오는 요청은 바디 미포함
+      * 데이터 업데이트 요청과 관련된 내용 (HTML 폼 콘텐츠 등)
+5. **서버가 클라이언트에게 데이터 응답**
+    * HTTP Response Message = Response Header + 빈 줄 + Response Body
+    * Response Header
+      * HTTP 프로토콜 버전 + 응답 코드 + 응답 메시지
+        * ex. ```HTTP/1.1 404 Not Found.```
+      * Header 정보(key-value 구조)
+    * 빈 줄
+      * 요청에 대한 모든 메타 정보가 전송되었음을 알리는 용도
+    * Response Body
+      * 응답 리소스 데이터
+        * 201, 204 상태 코드는 바디 미포함
+6. **서버 클라이언트 간 연결 종료**
+    * 4way-handshaking
+7. **웹 브라우저가 웹 문서 출력**
+
+#### HTTPS(SSL) 동작 과정
+* 공개키 암호화 방식과 대칭키 암호화 방식의 장점을 활용해 하이브리드 사용
+  * 데이터를 대칭키 방식으로 암복호화하고, 공개키 방식으로 대칭키 전달
+1. **클라이언트가 서버 접속하여 Handshaking 과정에서 서로 탐색**
+    
+    1.1. **Client Hello**
+      * 클라이언트가 서버에게 전송할 데이터
+        * 클라이언트 측에서 생성한 **랜덤 데이터**
+        * 클-서 암호화 방식 통일을 위해 **클라이언트가 사용할 수 있는 암호화 방식**
+        * 이전에 이미 Handshaking 기록이 있다면 자원 절약을 위해 기존 세션을 재활용하기 위한 **세션 아이디**
+
+    1.2. **Server Hello**
+      * Client Hello에 대한 응답으로 전송할 데이터
+        * 서버 측에서 생성한 **랜덤 데이터**
+        * **서버가 선택한 클라이언트의 암호화 방식**
+        * **SSL 인증서**
+
+    1.3. **Client 인증 확인**
+      * 서버로부터 받은 인증서가 CA에 의해 발급되었는지 본인이 가지고 있는 목록에서 확인하고, 목록에 있다면 CA 공개키로 인증서 복호화
+      * 클-서 각각의 랜덤 데이터를 조합하여 pre master secret 값 생성(데이터 송수신 시 대칭키 암호화에 사용할 키)
+      * pre master secret 값을 공개키 방식으로 서버 전달(공개키는 서버로부터 받은 인증서에 포함)
+      * 일련의 과정을 거쳐 session key 생성
+
+    1.4. **Server 인증 확인**
+      * 서버는 비공개키로 복호화하여 pre master secret 값 취득(대칭키 공유 완료)
+      * 일련의 과정을 거쳐 session key 생성
+
+    1.5. **Handshaking 종료**
+2. **데이터 전송**
+    * 서버와 클라이언트는 session key를 활용해 데이터를 암복호화하여 데이터 송수신
+3. **연결 종료 및 session key 폐기**
+
+> :arrow_double_up:[Top](#2-network)    :leftwards_arrow_with_hook:[Back](https://github.com/WeareSoft/tech-interview#2-network)    :information_source:[Home](https://github.com/WeareSoft/tech-interview#tech-interview)
+> - [[Network] HTTP의 동작 및 HTTP Message 형식](https://gmlwjd9405.github.io/2019/04/17/what-is-http-protocol.html)
+> - [HTTP 동작 과정](https://jess-m.tistory.com/17)
+> - [HTTP 메시지](https://developer.mozilla.org/ko/docs/Web/HTTP/Messages)
+> - [HTTPS와 SSL 인증서](https://opentutorials.org/course/228/4894)
 
 ### CORS란 
 - CORS(Cross Origin Resource Sharing)란 
@@ -666,12 +784,37 @@
 
 ### Frame Packet Segment Datagram
 
+#### PDU (Protocol Data Unit)
+![](./images/osi-pdu.png)
+
+프로토콜 데이터 단위. 데이터 통신에서 상위 계층이 전달한 데이터에 붙이는 제어정보를 뜻한다. 각 계층의 데이터의 단위이다.
+- 물리 계층: Bit
+- 데이터링크 계층: Frame
+- 네트워크 계층: Packets
+- 전송 계층: Segment
+- 세션, 표현, 어플리케이션 계층: Message(Data)
+
+#### 데이터 캡슐화
+![](./images/data-encapsulation.png)
+
+PDU는 SDU(Service Data Unit) 와 PCI(Protocol Control Information)로 구성되어 있다. SDU는 전송하려는 데이터고, PCI는 제어 정보다. PCI에는 송신자와 수신자 주소, 오류 검출 코드, 프로토콜 제어 정보 등이 있다. 데이터에 제어 정보를 덧붙이는 것을 캡슐화(Encapsulation)라 한다.
+
+다시 말해, 캡슐화는 어떤 네트워크를 통과하기 위해 전송하려는 데이터를 다른 무언가로 감싸서 보내고 해당 네트워크를 통과하면 감싼 부분을 다시 벗겨내어 전송하는 기능을 말한다.
+
+ 
+
+ 
 > :arrow_double_up:[Top](#2-network)    :leftwards_arrow_with_hook:[Back](https://github.com/Do-Hee/tech-interview#2-network)    :information_source:[Home](https://github.com/Do-Hee/tech-interview#tech-interview)
 > - []()
 
 ---
 ## Reference
-> - []()
+> - [데이터가 전달되는 원리" OSI 7계층 모델과 TCP/IP 모델](https://velog.io/@hidaehyunlee/%EB%8D%B0%EC%9D%B4%ED%84%B0%EA%B0%80-%EC%A0%84%EB%8B%AC%EB%90%98%EB%8A%94-%EC%9B%90%EB%A6%AC-OSI-7%EA%B3%84%EC%B8%B5-%EB%AA%A8%EB%8D%B8%EA%B3%BC-TCPIP-%EB%AA%A8%EB%8D%B8)
+> - [Network Fundamentals CCNA Exploration Companion Guide](https://www.ibserveis.com/pax/1-protocols_ok.pdf)
+> - [OSI 7계층](https://brownbears.tistory.com/189)
+> 
+
 
 
 ## :house: [Home](https://github.com/Do-Hee/tech-interview)
+

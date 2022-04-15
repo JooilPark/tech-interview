@@ -2,6 +2,7 @@
 **:book: Contents**
 * [스프링 프레임워크란](#스프링-프레임워크란)
 * [Spring, Spring MVC, Spring Boot의 차이](#spring-spring-mvc-spring-boot의-차이)
+* [Bean이란](#bean이란)
 * [Container란](#container란)
 * [IOC(Inversion of Control, 제어의 역전)란](#ioc란)
 * [MVC 패턴이란](#mvc-패턴이란)
@@ -10,6 +11,7 @@
 * [POJO](#pojo)
 * [DAO와 DTO의 차이](#dao와-dto의-차이)
 * [Spring JDBC를 이용한 데이터 접근](#spring-jdbc를-이용한-데이터-접근)
+* [Filter와 Interceptor 차이](#filter와-interceptor-차이)
 
 ---
 
@@ -35,6 +37,71 @@
 
 > :arrow_double_up:[Top](#9-spring)    :leftwards_arrow_with_hook:[Back](https://github.com/WeareSoft/tech-interview#9-spring)    :information_source:[Home](https://github.com/WeareSoft/tech-interview#tech-interview)
 > - [http://blog.naver.com/PostView.nhn?blogId=sthwin&logNo=221271008423&parentCategoryNo=&categoryNo=50&viewDate=&isShowPopularPosts=true&from=search](http://blog.naver.com/PostView.nhn?blogId=sthwin&logNo=221271008423&parentCategoryNo=&categoryNo=50&viewDate=&isShowPopularPosts=true&from=search)
+
+### Bean이란
+* 컨테이너 안에 들어있는 객체
+* 컨테이너에 담겨있으며, 필요할 때 컨테이너에서 가져와서 사용
+* @Bean 을 사용하거나 xml 설정을 통해 일반 객체를 Bean으로 등록할 수 있고, Bean으로 등록된 객체는 쉽게 주입하여 사용 가능
+
+#### Bean 생명주기
+- 객체 생성 -> 의존 설정 -> 초기화 -> 사용 -> 소멸
+- 스프링 컨테이너에 의해 생명주기 관리
+- 스프링 컨테이너 초기화 시 빈 객체 생성, 의존 객체 주입 및 초기화
+- 스프링 컨테이너 종료 시 빈 객체 소멸
+
+#### Bean 초기화 방법 3가지
+1. 빈 초기화 메소드에 ```@PostConstruct``` 사용
+  - 빈 정의 xml에 ```<context:annotation-config></context:annotation-config>``` 추가
+2. ```InitializingBean``` 인터페이스의 ```afterPropertiesSet()``` 메소드 오버라이드
+3. 커스텀 init() 메소드 정의
+  - 빈 정의 xml에 ```init-method``` 속성으로 메소드 이름 지정
+  - 또는 빈 초기화 메소드에 ```@Bean(init-method="init")``` 지정
+
+#### Bean 소멸 방법 3가지
+1. 빈 소멸 메소드에 ```@PreDestroy``` 사용
+  - 빈 정의 xml에 ```<context:annotation-config></context:annotation-config>``` 추가
+2. ```DisposableBean``` 인터페이스의 ```destroy()``` 메소드 오버라이드
+3. 커스텀 destroy() 메소드 정의
+  - 빈 정의 xml에 ```destroy-method``` 속성으로 메소드 이름 지정
+
+##### 권장하는 방법
+- 1번 방법 (권장)
+  - 사용 방법이 간결하며 코드에서 초기화 메소드가 존재함을 쉽게 파악 가능하여 xml 설정 방법보다 직관적
+- 2번 방법 (지양)
+  - 빈 코드에 스프링 인터페이스가 노출되어 권장하지 않으며 간결하지 않은 방법
+- 3번 방법
+  - 빈 코드에 스프링 인터페이스는 노출되지 않지만, 코드만으로 초기화 메소드 호출 여부를 알 수 없는 단점
+
+#### Bean Scope
+* **singleton (default)**
+  * 애플리케이션에서 Bean 등록 시 singleton scope로 등록
+  * Spring IoC 컨테이너 당 한 개의 인스턴스만 생성
+  * 컨테이너가 Bean 가져다 주입할 때 항상 같은 객체 사용
+  * 메모리나 성능 최적화에 유리
+* **prototype**
+  * 컨테이너에서 Bean 가져다 쓸 때 항상 다른 인스턴스 사용
+  * 모든 요청에서 새로운 객체 생성
+  * gc에 의해 Bean 제거
+* request
+  * Bean 등록 시 하나의 HTTP request 생명주기 안에 단 하나의 Bean만 존재
+  * 각각의 HTTP 요청은 고유 Bean 객체 보유
+  * Spring MVC Web Application에서 사용
+* session
+  * 하나의 HTTP Session 생명주기 안에 단 하나의 Bean만 존재
+  * Spring MVC Web Application에서 사용
+* global session
+  * 하나의 global HTTP Session 생명주기 안에 한 개의 Bean 지정
+  * Spring MVC Web Application에서 사용
+* application
+  * ServletContext 생명주기 안에 한 개의 Bean 지정
+  * Spring MVC Web Application에서 사용
+
+> :arrow_double_up:[Top](#9-spring)    :leftwards_arrow_with_hook:[Back](https://github.com/WeareSoft/tech-interview#9-spring)    :information_source:[Home](https://github.com/WeareSoft/tech-interview#tech-interview)
+> - [[Spring] IOC(Inversion Of Control): 제어 역전](https://velog.io/@max9106/Spring-IOC%EB%AF%B8%EC%99%84)
+> - [[Spring] Spring Bean의 개념과 Bean Scope 종류](https://gmlwjd9405.github.io/2018/11/10/spring-beans.html)
+> - [Spring 빈/컨테이너 생명주기 (Lifecycle)](https://flowarc.tistory.com/entry/Spring-%EB%B9%88%EC%BB%A8%ED%85%8C%EC%9D%B4%EB%84%88-%EC%83%9D%EB%AA%85%EC%A3%BC%EA%B8%B0-Lifecycle)
+> - [SpringMVC :: 스프링 컨테이너의 생명주기, 빈의 생명주기 (Life cycle), InitialzingBean, DisposableBean, @PreDestroy, @PostConstruct](https://hongku.tistory.com/106)
+> - [[Spring] 빈(bean)생명주기 메소드](https://cornswrold.tistory.com/100)
 
 ### Container란
 - 컨테이너(Container)는 보통 인스턴스의 생명주기를 관리하며, 생성된 인스턴스들에게 추가적인 기능을 제공하도록하는 것이라 할 수 있다. 다시말해, 컨테이너란 당신이 작성한 코드의 처리과정을 위임받은 독립적인 존재라고 생각하면 된다. 컨테이너는 적절한 설정만 되어있다면 누구의 도움없이도 프로그래머가 작성한 코드를 스스로 참조한 뒤 알아서 객체의 생성과 소멸을 컨트롤해준다.
@@ -96,9 +163,60 @@
 
 ### AOP란
 * AOP(Aspect Oriented Programming)란
+  - Aspect Oriented Programming, 관점 지향 프로그래밍
+  - 어떤 로직을 기준으로 핵심 관점과 부가 관점을 나누고, 관점을 기준으로 모듈화하는 것
+  - 핵심 관점은 주로 핵심 비즈니스 로직
+  - 부가 관점은 핵심 로직을 실행하기 위한 데이터베이스 연결, 로깅, 파일 입출력 등
+  
+* AOP 목적
+  - 소스 코드에서 여러 번 반복해서 쓰는 코드(= 흩어진 관심사, Concern)를 Aspect로 모듈화하여 핵심 로직에서 분리 및 재사용
+  - 개발자가 핵심 로직에 집중할 수 있게 하기 위함
+  - 주로 부가 기능을 모듈화
+  
+* AOP 주요 용어
+  - **Aspect**
+    - 흩어진 관심사를 모듈화 한 것
+    - Advice + PointCut
+  - **Target**
+    - Aspect를 적용하는 곳(클래스, 메소드 등)
+  - **Advice**
+    - 실질적으로 수행해야 하는 기능을 담은 구현체
+  - **JoinPoint**
+    - Advice가 적용될 위치
+    - 끼어들 수 있는 지점
+    - ex. 메소드 진입 시, 생성자 호출 시, 필드에서 값 꺼낼 때 등
+  - **PointCut**
+    - JoinPoint의 상세 스펙 정의
+    - 더욱 구체적으로 Advice가 실행될 지점 지정
+  - **Weaving**
+    - PointCut에 의해 결정된 Target의 JoinPoint에 Advice를 삽입하는 과정
+  
+* AOP 적용 방법
+  1. 컴파일 시 적용
+      - AspectJ가 사용하는 방법
+      - 자바 파일을 클래스 파일로 만들 때 Advice 소스가 추가되어 조작된 바이트 코드 생성하는 방법
+  2. 로드 시 적용
+      - AspectJ가 사용하는 방법
+      - 컴파일 후 컴파일 된 클래스를 로딩하는 시점에 Advice 소스를 끼워넣는 방법
+  3. 런타임 시 적용
+      - **Spring AOP**가 사용하는 방법
+      - 스프링은 런타임 시 Bean 생성
+      - A라는 Bean 만들 때 A라는 타입의 프록시 Bean도 생성하고, 프록시 Bean이 A의 메소드 호출 직전에 Advice 소스를 호출한 후 A의 메소드 호출
+
+* Spring AOP 특징
+  - [프록시 패턴](https://velog.io/@max9106/Spring-%ED%94%84%EB%A1%9D%EC%8B%9C-AOP-xwk5zy57ee) 기반의 AOP 구현체
+    - Target 객체에 대한 프록시를 만들어 제공
+    - Target을 감싸는 프록시는 런타임 시 생성
+    - 접근 제어 및 부가 기능 추가를 위해 프록시 객체 사용
+  - 프록시가 Target 객체의 호출을 가로채 Advice 수행 전/후 핵심 로직 호출
+  - 스프링 Bean에만 AOP 적용 가능
+    - 메소드 조인 포인트만 지원하여 메소드가 호출되는 런타임 시점에만 Advice 적용 가능
+  - 모든 AOP기능을 제공하지는 않으며 스프링 IoC와 연동하여 엔터프라이즈 애플리케이션의 각종 문제(중복 코드, 프록시 클래스 작성의 번거로움, 객체 간 관계 복잡도 증가)에 대한 해결책 지원 목적
 
 > :arrow_double_up:[Top](#9-spring)    :leftwards_arrow_with_hook:[Back](https://github.com/WeareSoft/tech-interview#9-spring)    :information_source:[Home](https://github.com/WeareSoft/tech-interview#tech-interview)
-> - []()
+> - [[Spring] 스프링 AOP (Spring AOP) 총정리 : 개념, 프록시 기반 AOP, @AOP](https://engkimbs.tistory.com/746)
+> - [[Spring] AOP란?](https://velog.io/@max9106/Spring-AOP%EB%9E%80-93k5zjsm95)
+> - [Spring AOP, Aspect 개념 특징, AOP 용어 정리](https://shlee0882.tistory.com/206)
 
 ### POJO
 번역하면 '평범한 구식 자바 객체'. 즉 프레임워크 인터페이스나 클래스를 구현하거나 확장하지 않는 단순한 클래스.
@@ -137,6 +255,57 @@
 ### Spring JDBC를 이용한 데이터 접근
 > :arrow_double_up:[Top](#9-spring)    :leftwards_arrow_with_hook:[Back](https://github.com/WeareSoft/tech-interview#9-spring)    :information_source:[Home](https://github.com/WeareSoft/tech-interview#tech-interview)
 > - []()
+
+### Filter와 Interceptor 차이
+
+#### Filter, Interceptor
+* 애플리케이션에서 자주 사용되는 기능(공통 부분)을 분리하여 관리할 수 있도록 Spring이 제공하는 기능
+
+#### Filter, Interceptor 흐름
+
+![filterInterceptor](./images/filterInterceptor.jpg)
+1. 서버 실행 시 Servlet이 올라오는 동안 init 후 doFilter 실행
+2. Dispatcher Servlet을 지나쳐 Interceptor의 preHandler 실행
+3. 컨트롤러를 거쳐 내부 로직 수행 후, Interceptor의 postHandler 실행
+4. doFilter 실행
+5. Servlet 종료 시 destroy
+
+#### Filter 특징
+* Dispatcher Servlet 이전에 수행되고, 응답 처리에 대해서도 변경 및 조작 수행 가능
+  * WAS 내의 ApplicationContext에서 등록된 필터가 실행
+* WAS 구동 시 FilterMap이라는 배열에 등록되고, 실행 시 Filter chain을 구성하여 순차적으로 실행
+* Spring Context 외부에 존재하여 Spring과 무관한 자원에 대해 동작
+* 일반적으로 web.xml에 설정
+* 예외 발생 시 Web Application에서 예외 처리
+* ex. 인코딩 변환, XSS 방어 등
+* 실행 메소드
+  * init() : 필터 인스턴스 초기화
+  * doFilter() : 실제 처리 로직
+  * destroy() : 필터 인스턴스 종료
+
+#### Interceptor 특징
+* Dispatcher Servlet 이후 Controller 호출 전, 후에 끼어들어 기능 수행
+* Spring Context 내부에서 Controller의 요청과 응답에 관여하며 모든 Bean에 접근 가능
+* 일반적으로 servlet-context.xml에 설정
+* 예외 발생 시 @ControllerAdvice에서 @ExceptionHandler를 사용해 예외 처리
+* ex. 로그인 체크, 권한 체크, 로그 확인 등
+* 실행 메소드
+  * preHandler() : Controller 실행 전
+  * postHandler() : Controller 실행 후
+  * afterCompletion() : view Rendering 후
+
+##### Filter, Interceptor 차이점 요약
+* Filter는 WAS단에 설정되어 Spring과 무관한 자원에 대해 동작하고, Interceptor는 Spring Context 내부에 설정되어 컨트롤러 접근 전, 후에 가로채서 기능 동작
+* Filter는 doFilter() 메소드만 있지만, Interceptor는 pre와 post로 명확하게 분리
+* Interceptor의 경우 AOP 흉내 가능
+  * handlerMethod(@RequestMapping을 사용해 매핑 된 @Controller의 메소드)를 파라미터로 제공하여 메소드 시그니처 등 추가 정보를 파악해 로직 실행 여부 판단 가능
+
+
+> :arrow_double_up:[Top](#9-spring)    :leftwards_arrow_with_hook:[Back](https://github.com/WeareSoft/tech-interview#9-spring)    :information_source:[Home](https://github.com/WeareSoft/tech-interview#tech-interview)
+> - [[Spring] Filter, Interceptor, AOP 차이 및 정리](https://goddaehee.tistory.com/154)
+> - [[Spring] Filter, Interceptor, AOP 차이](https://velog.io/@sa833591/Spring-Filter-Interceptor-AOP-%EC%B0%A8%EC%9D%B4-yvmv4k96)
+> - [Spring Filter와 Interceptor](https://jaehun2841.github.io/2018/08/25/2018-08-18-spring-filter-interceptor/#spring-request-flow)
+> - [(Spring)Filter와 Interceptor의 차이](https://supawer0728.github.io/2018/04/04/spring-filter-interceptor/)
 
 ---
 
